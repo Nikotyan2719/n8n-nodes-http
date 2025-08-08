@@ -1,5 +1,5 @@
 {
-  "name": "n8n-nodes-<...>",
+  "name": "n8n-nodes-test",
   "version": "0.1.0",
   "description": "",
   "keywords": [
@@ -37,8 +37,7 @@
       "dist/credentials/HttpBinApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/ExampleNode/ExampleNode.node.js",
-      "dist/nodes/HttpBin/HttpBin.node.js"
+      "dist/nodes/ApiRequestNode/ApiRequestNode.node.js"
     ]
   },
   "devDependencies": {
