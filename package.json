@@ -37,7 +37,7 @@
       "dist/credentials/HttpBinApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/ApiRequestNode/ApiRequestNode.node.js"
+      "dist/nodes/ApiRequestNode/ApiRequest.node.js"
     ]
   },
   "devDependencies": {
