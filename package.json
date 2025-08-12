@@ -37,8 +37,13 @@
       "dist/credentials/HttpBinApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/ApiRequestNode/ApiRequest.node.js"
+      "dist/nodes/ApiRequestNode/ApiRequest.node.js",
+      "dist/nodes/DocumentSearchTool/DocumentSearchTool.node.js",
+      "dist/nodes/PlaceholderRequest/PlaceholderRequest.node.js"
     ]
+  },
+  "dependencies": {
+    "@langchain/core": "^0.2.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "~8.32.0",
