@@ -1,2 +1,17 @@
 .DS_Store
 *.tsbuildinfo
+.idea/
+src/
+tsconfig.json
+gulpfile.js
+.gitignore
+.git/
+node_modules/
+nodes/
+credentials/
+README_TEMPLATE.md
+CODE_OF_CONDUCT.md
+.prettierrc.js
+.editorconfig
+.eslintrc.js
+.eslintrc.prepublish.js
