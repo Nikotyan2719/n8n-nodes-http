@@ -7,13 +7,13 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
-export class ApiRequest implements INodeType {
+export class QdrantSearch implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'API Request',
-		name: 'apiRequest',
+		displayName: 'Qdrant Search',
+		name: 'qdrantSearch',
 		group: ['transform'],
 		version: 1,
-		description: 'Makes a request to a specified API endpoint',
+		description: 'Makes a request to API endpoint with provided request body',
 		defaults: { name: 'API Request' },
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
@@ -38,19 +38,14 @@ export class ApiRequest implements INodeType {
 				description: 'The URL of the API endpoint',
 			},
 			{
-				displayName: 'Document Name',
-				name: 'documentName',
+				displayName: 'Request Body',
+				name: 'requestBody',
 				type: 'string',
-				required: true,
-				default: '',
-				description: 'Name of the document to process',
-			},
-			{
-				displayName: 'Response Count',
-				name: 'responseCount',
-				type: 'number',
-				default: '',
-				description: 'Number of responses to request (optional)',
+				default: '{}',
+				description: 'Request body as a JSON string',
+				typeOptions: {
+					rows: 5,
+				},
 			},
 		],
 	};
@@ -63,29 +58,36 @@ export class ApiRequest implements INodeType {
 			try {
 				const httpMethod = this.getNodeParameter('httpMethod', i, 'POST') as IHttpRequestMethods;
 				const apiUrl = this.getNodeParameter('apiUrl', i, '') as string;
-				const documentName = this.getNodeParameter('documentName', i, '') as string;
-				const responseCount = this.getNodeParameter('responseCount', i, '') as number;
-
-				const requestData: any = { documentName };
-				if (responseCount) requestData.responseCount = responseCount;
-
+				const requestBodyStr = this.getNodeParameter('requestBody', i, '{}') as string;
+				let requestBody;
+				if (requestBodyStr) {
+					try {
+						requestBody = JSON.parse(requestBodyStr);
+					} catch (e) {
+						throw new NodeOperationError(this.getNode(), 'Invalid JSON in request body');
+					}
+				}
 				const response = await this.helpers.httpRequest({
 					method: httpMethod,
 					url: apiUrl,
-					body: httpMethod === 'POST' ? requestData : undefined,
+					body: httpMethod === 'POST' ? requestBody : undefined,
 					json: true,
 				});
+
 				data.push({
 					json: {
 						...items[i].json,
-						request: requestData,
+						request: requestBody,
 						response,
 					},
 				});
 			} catch (error) {
 				if (this.continueOnFail()) {
 					data.push({
-						json: { error: error.message, input: items[i].json },
+						json: {
+							error: error.message,
+							input: items[i].json
+						},
 						pairedItem: { item: i },
 					});
 					continue;

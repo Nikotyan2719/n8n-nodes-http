@@ -6,18 +6,17 @@ import type {
 	IHttpRequestMethods,
 } from 'n8n-workflow';
 import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
-import { DynamicStructuredTool } from '@langchain/core/tools';
-import { z } from 'zod';
+import { DynamicTool } from '@langchain/core/tools';
 
-export class DocumentSearchTool implements INodeType {
+export class QdrantSearchTool implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Document Search Tool',
-		name: 'documentSearchTool',
+		displayName: 'Qdrant Search Tool',
+		name: 'qdrantSearchTool',
 		group: ['ai'],
 		version: 1,
-		description: 'Ищет документы по названию',
+		description: 'Makes an HTTP request with the provided query string',
 		defaults: {
-			name: 'Document Search',
+			name: 'Qdrant Search Tool',
 		},
 		inputs: [],
 		outputs: [NodeConnectionType.AiTool],
@@ -29,7 +28,7 @@ export class DocumentSearchTool implements INodeType {
 				type: 'string',
 				default: 'https://jsonplaceholder.typicode.com/posts',
 				required: true,
-				description: 'URL API для поиска документов',
+				description: 'URL to make the HTTP request to',
 			},
 			{
 				displayName: 'HTTP Method',
@@ -40,14 +39,14 @@ export class DocumentSearchTool implements INodeType {
 					{ name: 'POST', value: 'POST' },
 				],
 				default: 'POST',
-				description: 'HTTP метод для запроса',
+				description: 'HTTP method for the request',
 			},
 			{
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
-				default: 'Ищет документы по названию. Пример: Найти "Отчет 2023" в количестве 3 штуки',
-				description: 'Описание инструмента для ИИ',
+				default: 'Makes an HTTP request with the provided query string',
+				description: 'Tool description for the AI',
 				typeOptions: {
 					rows: 3,
 				},
@@ -58,49 +57,31 @@ export class DocumentSearchTool implements INodeType {
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
 		const apiUrl = this.getNodeParameter('apiUrl', itemIndex, '') as string;
 		const httpMethod = this.getNodeParameter('httpMethod', itemIndex, 'POST') as IHttpRequestMethods;
-		const description = this.getNodeParameter('description', itemIndex, 'Searches for documents by name, keywords, or identifiers') as string;
+		const description = this.getNodeParameter('description', itemIndex, 'Makes an HTTP request with the provided query string using Qdrant') as string;
 
 		if (!apiUrl) {
 			throw new NodeOperationError(this.getNode(), 'API URL is required');
 		}
 
-		const tool = new DynamicStructuredTool({
-			name: "document_search",
+		const tool = new DynamicTool({
+			name: "Qdrant_http_request_tool",
 			description: description,
-			schema: z.object({
-				documentName: z.string().describe(
-					"EXACT user query. MUST include ALL original words in the exact same order. " +
-					"DO NOT modify, summarize or extract keywords. " +
-					"Examples: " +
-					"- For 'find 15 documents about CRM deals' return 'find 15 documents about CRM deals' " +
-					"- For 'show contracts with 1C integration' return 'show contracts with 1C integration'"
-				),
-				responseCount: z.number().optional().describe(
-					"Number of results to return. " +
-					"Extract from the query, for example: " +
-					"- 'find 15 documents' → 15 " +
-					"- 'show 3 contracts' → 3"
-				)
-			}),
-			func: async ({ documentName, responseCount }) => {
+			func: async (input: string) => {
 				const { index } = this.addInputData(NodeConnectionType.AiTool, [[{
-					json: { documentName, responseCount }
+					json: { query: input }
 				}]]);
 
 				try {
 					const response = await this.helpers.httpRequest({
 						method: httpMethod,
 						url: apiUrl,
-						body: httpMethod === 'POST' ? { documentName, responseCount } : undefined,
+						body: httpMethod === 'POST' ? { query: input } : undefined,
 						json: true,
-						headers: {
-							'Content-Type': 'application/json',
-						},
 					});
 
 					const result = {
 						success: true,
-						request: { documentName, responseCount },
+						request: { query: input },
 						response,
 					};
 
@@ -110,7 +91,7 @@ export class DocumentSearchTool implements INodeType {
 					const nodeError = {
 						success: false,
 						error: error.message,
-						request: { documentName, responseCount },
+						request: { query: input },
 						...(error.response && {
 							statusCode: error.statusCode,
 							response: error.response
