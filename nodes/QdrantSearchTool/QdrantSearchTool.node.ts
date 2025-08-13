@@ -14,10 +14,8 @@ export class QdrantSearchTool implements INodeType {
 		name: 'qdrantSearchTool',
 		group: ['ai'],
 		version: 1,
-		description: 'Makes an HTTP request with the provided query string',
-		defaults: {
-			name: 'Qdrant Search Tool',
-		},
+		description: 'Makes a request to API Qdrant search',
+		defaults: { name: 'Qdrant Search Tool' },
 		inputs: [],
 		outputs: [NodeConnectionType.AiTool],
 		outputNames: ['Tool'],
@@ -45,7 +43,7 @@ export class QdrantSearchTool implements INodeType {
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
-				default: 'Makes an HTTP request with the provided query string',
+				default: 'Makes a request to API Qdrant search',
 				description: 'Tool description for the AI',
 				typeOptions: {
 					rows: 3,

@@ -13,8 +13,8 @@ export class QdrantSearch implements INodeType {
 		name: 'qdrantSearch',
 		group: ['transform'],
 		version: 1,
-		description: 'Makes a request to API endpoint with provided request body',
-		defaults: { name: 'API Request' },
+		description: 'Makes a request to API Qdrant search',
+		defaults: { name: 'Qdrant Search' },
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
 		properties: [
@@ -73,7 +73,6 @@ export class QdrantSearch implements INodeType {
 					body: httpMethod === 'POST' ? requestBody : undefined,
 					json: true,
 				});
-
 				data.push({
 					json: {
 						...items[i].json,
@@ -95,7 +94,6 @@ export class QdrantSearch implements INodeType {
 				throw new NodeOperationError(this.getNode(), error, { itemIndex: i });
 			}
 		}
-
 		return [data];
 	}
 }

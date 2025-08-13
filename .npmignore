@@ -8,7 +8,6 @@ gulpfile.js
 .git/
 node_modules/
 nodes/
-credentials/
 README_TEMPLATE.md
 CODE_OF_CONDUCT.md
 .prettierrc.js
