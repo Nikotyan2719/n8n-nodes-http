@@ -1,6 +1,5 @@
 import type {
 	IExecuteFunctions,
-	IHttpRequestMethods,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
@@ -13,39 +12,33 @@ export class QdrantSearch implements INodeType {
 		name: 'qdrantSearch',
 		group: ['transform'],
 		version: 1,
-		description: 'Makes a request to API Qdrant search',
+		description: 'Makes a GET request to Qdrant search API',
 		defaults: { name: 'Qdrant Search' },
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
 		properties: [
 			{
-				displayName: 'HTTP Method',
-				name: 'httpMethod',
-				type: 'options',
-				options: [
-					{ name: 'GET', value: 'GET' },
-					{ name: 'POST', value: 'POST' },
-				],
-				default: 'POST',
-				description: 'HTTP method to use',
-			},
-			{
 				displayName: 'API URL',
 				name: 'apiUrl',
 				type: 'string',
-				default: 'https://jsonplaceholder.typicode.com/posts',
+				default: '',
 				required: true,
-				description: 'The URL of the API endpoint',
+				description: 'URL to make the HTTP request',
 			},
 			{
-				displayName: 'Request Body',
-				name: 'requestBody',
+				displayName: 'Query',
+				name: 'query',
 				type: 'string',
-				default: '{}',
-				description: 'Request body as a JSON string',
-				typeOptions: {
-					rows: 5,
-				},
+				default: '',
+				description: 'Search query string',
+				required: true,
+			},
+			{
+				displayName: 'Limit',
+				name: 'resultsLimit',
+				type: 'number',
+				default: 4,
+				description: 'Number of results to return',
 			},
 		],
 	};
@@ -56,34 +49,39 @@ export class QdrantSearch implements INodeType {
 
 		for (let i = 0; i < items.length; i++) {
 			try {
-				const httpMethod = this.getNodeParameter('httpMethod', i, 'POST') as IHttpRequestMethods;
-				const apiUrl = this.getNodeParameter('apiUrl', i, '') as string;
-				const requestBodyStr = this.getNodeParameter('requestBody', i, '{}') as string;
-				let requestBody;
-				if (requestBodyStr) {
-					try {
-						requestBody = JSON.parse(requestBodyStr);
-					} catch (e) {
-						throw new NodeOperationError(this.getNode(), 'Invalid JSON in request body');
-					}
-				}
+				const apiUrl = this.getNodeParameter('apiUrl', i) as string;
+				const query = this.getNodeParameter('query', i) as string;
+				const limit = this.getNodeParameter('resultsLimit', i) as number | undefined;
+				const queryParams: Record<string, any> = { query };
+				if (limit) { queryParams.k = limit; }
 				const response = await this.helpers.httpRequest({
-					method: httpMethod,
+					method: 'GET',
 					url: apiUrl,
-					body: httpMethod === 'POST' ? requestBody : undefined,
+					qs: queryParams,
 					json: true,
+					headers: {
+						'accept': 'application/json'
+					},
 				});
+
+				const formattedResponse = Array.isArray(response)
+					? response.map((item: any) => ({
+						page_content: item.page_content || ''
+					}))
+					: [];
+
 				data.push({
 					json: {
 						...items[i].json,
-						request: requestBody,
-						response,
+						status: 'ok',
+						result: formattedResponse
 					},
 				});
 			} catch (error) {
 				if (this.continueOnFail()) {
 					data.push({
 						json: {
+							status: 'error',
 							error: error.message,
 							input: items[i].json
 						},
