@@ -34,7 +34,8 @@
     "n8nNodesApiVersion": 1,
     "nodes": [
       "dist/nodes/QdrantSearch/QdrantSearch.node.js",
-      "dist/nodes/QdrantSearchTool/QdrantSearchTool.node.js"
+      "dist/nodes/QdrantSearchTool/QdrantSearchTool.node.js",
+      "dist/nodes/SearchToolShema/SearchToolShema.node.js"
     ]
   },
   "dependencies": {
