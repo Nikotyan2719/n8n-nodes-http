@@ -35,7 +35,7 @@
     "nodes": [
       "dist/nodes/QdrantSearch/QdrantSearch.node.js",
       "dist/nodes/QdrantSearchTool/QdrantSearchTool.node.js",
-      "dist/nodes/SearchToolShema/SearchToolShema.node.js"
+      "dist/nodes/SearchTool/SearchTool.node.js"
     ]
   },
   "dependencies": {

@@ -8,14 +8,14 @@ import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 
-export class SearchToolShema implements INodeType {
+export class SearchTool implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Search Tool Shema',
-		name: 'searchToolShema',
+		displayName: 'Search Tool',
+		name: 'searchTool',
 		group: ['ai'],
 		version: 1,
 		description: 'Makes a request to API search',
-		defaults: { name: 'Search Tool Shema' },
+		defaults: { name: 'Search Tool' },
 		inputs: [],
 		outputs: [NodeConnectionType.AiTool],
 		outputNames: ['Tool'],
@@ -87,22 +87,19 @@ export class SearchToolShema implements INodeType {
 			description: description,
 			schema: z.object({
 				query: z.string().describe(queryDescription),
-				limit: z.number().int().min(1).max(maxLimit).default(defaultLimit).describe(limitDescription)
+				limit: z.number().int().min(1).default(defaultLimit).describe(limitDescription)
 			}),
 			func: async ({ query, limit }) => {
-				const finalLimit = Math.min(limit, maxLimit);
+				const k = Math.min(limit, maxLimit);
 				const { index } = this.addInputData(NodeConnectionType.AiTool, [[{
-					json: { query, limit: finalLimit }
+					json: { query, limit: k }
 				}]]);
 
 				try {
 					const response = await this.helpers.httpRequest({
 						method: 'GET',
 						url: apiUrl,
-						qs: {
-							query,
-							k: finalLimit
-						},
+						qs: { query, k },
 						json: true,
 						headers: {
 							'accept': 'application/json'
@@ -116,7 +113,7 @@ export class SearchToolShema implements INodeType {
 					const result = {
 						status: 'ok',
 						query: query,
-						limit: finalLimit,
+						limit: k,
 						result: formattedResponse
 					};
 
@@ -127,7 +124,7 @@ export class SearchToolShema implements INodeType {
 					const nodeError = {
 						status: 'error',
 						error: error.message,
-						request: { query, limit: finalLimit },
+						request: { query, limit: k },
 						...(error.response && {
 							statusCode: error.statusCode,
 							response: error.response
