@@ -13,7 +13,7 @@ export class IVN8N implements INodeType {
 		icon: 'fa:search',
 		group: ['transform'],
 		version: 1,
-		description: 'IVN8N Node with multiple operations',
+		description: 'IVN8N Node',
 		defaults: {
 			name: 'IVN8N',
 		},
@@ -34,14 +34,17 @@ export class IVN8N implements INodeType {
 						action: 'Perform search',
 					},
 					{
-						name: 'Process Data',
-						value: 'process',
-						description: 'Data processing operation',
-						action: 'Process data',
+						name: 'Add Blog Post',
+						value: 'addBlogPost',
+						description: 'Add blog post in bitrix24',
+						action: 'Add blog post',
 					},
 				],
 				default: 'search',
 			},
+			// ----------------------------------
+			//         search information
+			// ----------------------------------
 			{
 				displayName: 'API URL',
 				name: 'apiUrl',
@@ -96,17 +99,73 @@ export class IVN8N implements INodeType {
 					numberStepSize: 1,
 				},
 			},
+			// ----------------------------------
+			//         bitrix:sendPost
+			// ----------------------------------
 			{
-				displayName: 'Input Data',
-				name: 'inputData',
+				displayName: 'User',
+				name: 'user',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['addBlogPost'],
+					},
+				},
+				options: [
+					{
+						name: 'All',
+						value: 'all',
+
+						action: 'Add blog for all users',
+					},
+					{
+						name: 'Target',
+						value: 'target',
+
+						action: 'Add blog for target user',
+					},
+
+				],
+				default: 'all',
+			},
+			{
+				displayName: 'TargetUser',
+				name: 'targetUser',
 				type: 'string',
 				default: '',
 				displayOptions: {
 					show: {
-						operation: ['process'],
+						user: ['target'],
 					},
 				},
-				description: 'Data to process',
+				description: 'User ID to send the message to',
+			},
+			{
+				displayName: 'PostTitle',
+				name: 'postTitle',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						operation: ['addBlogPost'],
+					},
+				},
+				description: 'Title of the post',
+			},
+			{
+				displayName: 'PostMessage',
+				name: 'postMessage',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						operation: ['addBlogPost'],
+					},
+				},
+				typeOptions: {
+					rows: 5,
+				},
+				description: 'Message of the post',
 			},
 		],
 	};
@@ -121,47 +180,50 @@ export class IVN8N implements INodeType {
 
 				if (operation === 'search') {
 					const apiUrl = this.getNodeParameter('apiUrl', i) as string;
+					if (!apiUrl) { throw new NodeOperationError(this.getNode(), 'API URL is required'); }
 					const query = this.getNodeParameter('query', i) as string;
 					const maxLimit = this.getNodeParameter('maxLimit', i) as number;
-					let limit;
-					if (!apiUrl) { throw new NodeOperationError(this.getNode(), 'API URL is required'); }
-					try {
-						limit = this.getNodeParameter('limit', i) as number;
-						limit = Math.max(1, Math.min(limit, maxLimit));
-					} catch (e) {
-						limit = 1;
-					}
+					let limit = this.getNodeParameter('limit', i) as number;
+					limit = Math.max(1, Math.min(limit, maxLimit));
 					const responseData = await this.helpers.httpRequest({
 						method: 'GET',
 						url: apiUrl,
-						qs: {
-							query,
-							k: limit,
-						},
+						qs: { query, k: limit, },
 						json: true,
 						headers: {
 							'accept': 'application/json',
 						},
 					});
-
-					const formattedResponse = Array.isArray(responseData) ? responseData.map((item: any) => item.page_content || '') : [];
+					const formatted = Array.isArray(responseData) ? responseData.map((item: any) => item.page_content || '') : [];
 					returnData.push({
 						json: {
 							status: 'ok',
 							query,
 							limit,
-							results: formattedResponse,
+							results: formatted,
 						},
 					});
 				}
-				else if (operation === 'process') {
-					const inputData = this.getNodeParameter('inputData', i) as string;
-					const processedData = `Processed: ${inputData}`;
+				else if (operation === 'blogPost') {
+					const target = this.getNodeParameter('user', i) as string;
+					const title = this.getNodeParameter('postTitle', i) as string;
+					const message = this.getNodeParameter('postMessage', i) as string;
+					let DEST = ['UA'];
+					if (target === 'target') {
+						let input = this.getNodeParameter('targetUser', i) as string;
+						input = input.replace(/[\[\]'"]/g, '');
+						DEST = input.split(',').filter(Boolean);
+					}
+					const params = {
+						DEST,
+						POST_MESSAGE: title,
+						POST_TITLE: message,
+					};
 					returnData.push({
 						json: {
 							status: 'ok',
 							operation: 'process',
-							result: processedData,
+							result: params,
 						},
 					});
 				}
